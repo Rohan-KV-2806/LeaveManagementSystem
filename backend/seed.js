@@ -1,43 +1,35 @@
 require('dotenv').config();
 const sequelize = require('./src/config/database');
 const User = require('./src/models/User');
+const LeaveType = require('./src/models/LeaveType');
 
 const seedDatabase = async () => {
   try {
-    // Connect to DB
     await sequelize.authenticate();
     console.log('Database connected...');
 
-    // Sync models (creates table if it doesn't exist)
     await sequelize.sync({ alter: true });
     console.log('Tables synced...');
 
-    // 1. Insert Employee
+    // Insert Users
     await User.findOrCreate({
       where: { email: 'john@meowmeow.com' },
-      defaults: {
-        name: 'John',
-        email: 'john@meowmeow.com',
-        password: 'password123', // The model hook will hash this automatically!
-        role: 'employee'
-      }
+      defaults: { name: 'John', email: 'john@meowmeow.com', password: 'password123', role: 'employee' }
     });
-    console.log('Employee inserted: john@meowmeow.com / password123');
-
-    // 2. Insert Manager
+    
     await User.findOrCreate({
       where: { email: 'meowboss@meowmeow.com' },
-      defaults: {
-        name: 'MeowBoss',
-        email: 'meowboss@meowmeow.com',
-        password: 'password123', // The model hook will hash this automatically!
-        role: 'manager'
-      }
+      defaults: { name: 'MeowBoss', email: 'meowboss@meowmeow.com', password: 'password123', role: 'manager' }
     });
-    console.log('Manager inserted: meowboss@meowmeow.com / password123');
+    console.log('Users inserted.');
+
+    // Insert Leave Types
+    await LeaveType.findOrCreate({ where: { name: 'Annual Leave' }, defaults: { description: 'Paid yearly vacation' } });
+    await LeaveType.findOrCreate({ where: { name: 'Sick Leave' }, defaults: { description: 'Medical leave' } });
+    await LeaveType.findOrCreate({ where: { name: 'Casual Leave' }, defaults: { description: 'Short personal leave' } });
+    console.log('Leave Types inserted.');
 
     console.log('\n--- SEEDING COMPLETE ---');
-    console.log('You can now login from your frontend using these credentials.');
     process.exit(0);
   } catch (error) {
     console.error('Error seeding database:', error);

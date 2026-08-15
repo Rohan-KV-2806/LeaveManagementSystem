@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog' // Removed DialogTrigger from import
+import { useNavigate } from '@tanstack/react-router'
+import LeaveApplicationForm from '../leave/LeaveApplicationForm'
 import { toast } from 'sonner'
 
-// Dummy user type matching the Fastify backend response
 interface User {
   id: number
   name: string
@@ -10,19 +13,33 @@ interface User {
 }
 
 export default function Dashboard() {
-  // Retrieve user from localStorage (set during login)
+  const navigate = useNavigate()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  
   const userString = localStorage.getItem('user')
   const user: User | null = userString ? JSON.parse(userString) : null
 
   if (!user) {
-    return <div>Loading...</div> // Or redirect to login
+    return <div>Loading...</div>
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    toast.success('Logged out successfully')
+    navigate({ to: '/' })
   }
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8">
-        Hello, {user.role === 'employee' ? 'emp' : 'man'} {user.name}
-      </h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">
+          Hello, {user.role === 'employee' ? 'emp' : 'man'} {user.name}
+        </h1>
+        <Button variant="outline" onClick={handleLogout}>
+          Logout
+        </Button>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {user.role === 'employee' && (
@@ -32,9 +49,22 @@ export default function Dashboard() {
               <CardDescription>Manage your leave requests here</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => toast.info('Leave Application Form coming in next step!')}>
+              {/* Removed DialogTrigger, using standard onClick to control state */}
+              <Button onClick={() => setIsDialogOpen(true)}>
                 Request Leave
               </Button>
+              
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Apply for Leave</DialogTitle>
+                    <DialogDescription>
+                      Fill out the form below to submit your leave request.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <LeaveApplicationForm onSubmitSuccess={() => setIsDialogOpen(false)} />
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
         )}
@@ -46,7 +76,7 @@ export default function Dashboard() {
               <CardDescription>Review and approve team leaves</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => toast.info('Approvals Table coming in next step!')}>
+              <Button onClick={() => navigate({ to: '/approvals' })}>
                 View Employee Requests
               </Button>
             </CardContent>

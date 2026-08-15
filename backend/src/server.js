@@ -1,33 +1,48 @@
 const fastify = require('fastify')({ logger: true });
 require('dotenv').config();
 const sequelize = require('./config/database');
-const User = require('./models/User'); // Import to sync
 
-// 1. Register CORS Plugin FIRST
+// Import Models
+const User = require('./models/User');
+const LeaveType = require('./models/LeaveType');
+const LeaveRequest = require('./models/LeaveRequest');
+const Approval = require('./models/Approval');
+
+// Register CORS Plugin
 fastify.register(require('@fastify/cors'), {
-  origin: '*', // Allow all origins (for development). You can restrict this to 'http://localhost:5173' later.
+  origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
 });
 
-// 2. Register Auth Plugin
+// Register Auth Plugin
 const authPlugin = require('./plugins/auth');
 fastify.register(authPlugin);
 
-// 3. Register Routes
-// Using fastify.register for routes ensures prefixing and scope work correctly
+// Register Routes
 const registerRoutes = require('./routes/routes');
 fastify.register(registerRoutes);
 
 // Start Server & Sync DB
 const start = async () => {
   try {
-    // Connect to PostgreSQL and sync models
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
-    await sequelize.sync({ alter: true }); 
+
+    // Setup Associations
+    User.hasMany(LeaveRequest, { foreignKey: 'userId' });
+    LeaveRequest.belongsTo(User, { foreignKey: 'userId' });
+
+    LeaveType.hasMany(LeaveRequest, { foreignKey: 'leaveTypeId' });
+    LeaveRequest.belongsTo(LeaveType, { foreignKey: 'leaveTypeId' });
+
+    LeaveRequest.hasOne(Approval, { foreignKey: 'leaveRequestId' });
+    Approval.belongsTo(LeaveRequest, { foreignKey: 'leaveRequestId' });
+    Approval.belongsTo(User, { foreignKey: 'managerId', as: 'manager' });
+
+    // Sync models
+    await sequelize.sync({ alter: true });
     console.log('Database synced.');
 
-    // Start Fastify
     await fastify.listen({ port: process.env.PORT || 3000, host: '0.0.0.0' });
     console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
   } catch (err) {

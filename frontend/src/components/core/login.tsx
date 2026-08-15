@@ -4,8 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-// Assume you have a toast library installed (e.g., sonner or shadcn toast)
-import { toast } from 'sonner' 
+import { toast } from 'sonner'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -18,9 +17,6 @@ export default function Login() {
     setLoading(true)
 
     try {
-      // FASTIFY BACKEND EXPECTATION:
-      // POST to /api/auth/login
-      // Response JSON: { token: 'jwt_string', user: { id: 1, name: 'John', role: 'employee' | 'manager' } }
       const response = await fetch('http://localhost:3000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -31,13 +27,10 @@ export default function Login() {
 
       const data = await response.json()
       
-      // Save token and user details for TanStack Router protected route
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
 
       toast.success('Login successful!')
-      
-      // Redirect to dashboard
       navigate({ to: '/dashboard' })
     } catch (error) {
       toast.error('Login failed. Please check your credentials.')
@@ -60,7 +53,7 @@ export default function Login() {
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="john.doe@company.com" 
+                placeholder="john@meowmeow.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

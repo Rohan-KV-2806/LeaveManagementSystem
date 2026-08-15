@@ -33,8 +33,17 @@ const User = sequelize.define('User', {
   hooks: {
     // Hash password before creating user
     beforeCreate: async (user) => {
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(user.password, salt);
+      if (user.password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    },
+    // Hash password if it is updated
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
     }
   }
 });
@@ -43,5 +52,20 @@ const User = sequelize.define('User', {
 User.prototype.validPassword = async function(password) {
   return await bcrypt.compare(password, this.password);
 };
+
+// --- Associations ---
+const LeaveRequest = require('./LeaveRequest');
+
+// A User can make many leave requests
+User.hasMany(LeaveRequest, { 
+  foreignKey: 'userId', 
+  as: 'leaveRequests' 
+});
+
+// A Manager can approve many leave requests
+User.hasMany(LeaveRequest, { 
+  foreignKey: 'managerId', 
+  as: 'managedRequests' 
+});
 
 module.exports = User;
