@@ -3,6 +3,7 @@ const LeaveRequest = require('../models/LeaveRequest');
 const Approval = require('../models/Approval');
 const User = require('../models/User');
 const { countDays } = require('../utils/days');
+const { sendLeaveDecisionEmail } = require('../services/mailer');
 
 class LeaveController {
   // GET /api/leave-types
@@ -110,7 +111,12 @@ class LeaveController {
     const { id } = request.params;
     const { comments } = request.body || {};
     try {
-      const leaveRequest = await LeaveRequest.findByPk(id);
+      const leaveRequest = await LeaveRequest.findByPk(id, {
+        include: [
+          { model: User, attributes: ['name', 'email'] },
+          { model: LeaveType, attributes: ['name'] }
+        ]
+      });
       if (!leaveRequest) {
         return reply.code(404).send({ error: 'Leave request not found' });
       }
@@ -127,6 +133,20 @@ class LeaveController {
         comments: comments || null
       });
 
+      // Notify the employee by email (never fail the request if the mail fails)
+      try {
+        await sendLeaveDecisionEmail({
+          to: leaveRequest.User.email,
+          name: leaveRequest.User.name,
+          leaveType: leaveRequest.LeaveType ? leaveRequest.LeaveType.name : 'Leave',
+          startDate: new Date(leaveRequest.startDate).toLocaleDateString(),
+          endDate: new Date(leaveRequest.endDate).toLocaleDateString(),
+          status: 'approved'
+        });
+      } catch (mailError) {
+        request.log.error('Failed to send approval email:', mailError);
+      }
+
       return reply.send({ message: 'Leave request approved', data: leaveRequest });
     } catch (error) {
       request.log.error(error);
@@ -139,7 +159,12 @@ class LeaveController {
     const { id } = request.params;
     const { comments } = request.body || {};
     try {
-      const leaveRequest = await LeaveRequest.findByPk(id);
+      const leaveRequest = await LeaveRequest.findByPk(id, {
+        include: [
+          { model: User, attributes: ['name', 'email'] },
+          { model: LeaveType, attributes: ['name'] }
+        ]
+      });
       if (!leaveRequest) {
         return reply.code(404).send({ error: 'Leave request not found' });
       }
@@ -155,6 +180,21 @@ class LeaveController {
         status: 'rejected',
         comments: comments || null
       });
+
+      // Notify the employee by email, including the rejection reason
+      try {
+        await sendLeaveDecisionEmail({
+          to: leaveRequest.User.email,
+          name: leaveRequest.User.name,
+          leaveType: leaveRequest.LeaveType ? leaveRequest.LeaveType.name : 'Leave',
+          startDate: new Date(leaveRequest.startDate).toLocaleDateString(),
+          endDate: new Date(leaveRequest.endDate).toLocaleDateString(),
+          status: 'rejected',
+          reason: comments || null
+        });
+      } catch (mailError) {
+        request.log.error('Failed to send rejection email:', mailError);
+      }
 
       return reply.send({ message: 'Leave request rejected', data: leaveRequest });
     } catch (error) {

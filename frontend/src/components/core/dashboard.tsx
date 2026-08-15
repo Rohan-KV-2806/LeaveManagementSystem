@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Calendar } from '@/components/ui/calendar'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { useNavigate } from '@tanstack/react-router'
 import LeaveApplicationForm from '../leave/LeaveApplicationForm'
 import { toast } from 'sonner'
@@ -51,6 +53,11 @@ export default function Dashboard() {
   const [historyLoading, setHistoryLoading] = useState(true)
   const [refresh, setRefresh] = useState(0)
   const [reasonItem, setReasonItem] = useState<LeaveHistoryItem | null>(null)
+  const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false)
+  const [empName, setEmpName] = useState('')
+  const [empEmail, setEmpEmail] = useState('')
+  const [empPassword, setEmpPassword] = useState('')
+  const [addingEmployee, setAddingEmployee] = useState(false)
 
   const userString = localStorage.getItem('user')
   const user: User | null = userString ? JSON.parse(userString) : null
@@ -105,6 +112,33 @@ export default function Dashboard() {
     localStorage.removeItem('user')
     toast.success('Logged out successfully')
     navigate({ to: '/' })
+  }
+
+  const handleAddEmployee = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setAddingEmployee(true)
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch('http://localhost:3000/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: empName, email: empEmail, password: empPassword })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || 'Failed to add employee')
+      toast.success(data.message || 'Employee added successfully')
+      setEmpName('')
+      setEmpEmail('')
+      setEmpPassword('')
+      setIsAddEmployeeOpen(false)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to add employee')
+    } finally {
+      setAddingEmployee(false)
+    }
   }
 
   return (
@@ -228,17 +262,73 @@ export default function Dashboard() {
             </Card>
           </>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle>Management Actions</CardTitle>
-              <CardDescription>Review and approve team leaves</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => navigate({ to: '/approvals' })}>
-                View Employee Requests
-              </Button>
-            </CardContent>
-          </Card>
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>Management Actions</CardTitle>
+                <CardDescription>Review and approve team leaves</CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2">
+                <Button onClick={() => navigate({ to: '/approvals' })}>
+                  View Employee Requests
+                </Button>
+                <Button variant="outline" onClick={() => setIsAddEmployeeOpen(true)}>
+                  Add Employee
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Dialog open={isAddEmployeeOpen} onOpenChange={setIsAddEmployeeOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add Employee</DialogTitle>
+                <DialogDescription>Create a new employee account</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAddEmployee} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="empName">Full Name</Label>
+                  <Input
+                    id="empName"
+                    placeholder="Jane Doe"
+                    value={empName}
+                    onChange={(e) => setEmpName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="empEmail">Email</Label>
+                  <Input
+                    id="empEmail"
+                    type="email"
+                    placeholder="jane@company.com"
+                    value={empEmail}
+                    onChange={(e) => setEmpEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="empPassword">Password</Label>
+                  <Input
+                    id="empPassword"
+                    type="password"
+                    placeholder="Enter a password"
+                    value={empPassword}
+                    onChange={(e) => setEmpPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setIsAddEmployeeOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={addingEmployee}>
+                    {addingEmployee ? 'Adding...' : 'Add Employee'}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+          </>
         )}
       </div>
 

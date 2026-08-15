@@ -1,10 +1,16 @@
 const authController = require('../controllers/authController');
 const dashboardController = require('../controllers/dashboardController');
 const leaveController = require('../controllers/leaveController');
+const userController = require('../controllers/userController');
 
 module.exports = async function (fastify, options) {
   // Auth Routes
   fastify.post('/api/auth/login', authController.login);
+
+  // Create an employee account (managers only)
+  fastify.post('/api/users', {
+    preHandler: [fastify.authenticate, fastify.requireRole('manager')]
+  }, userController.createEmployee);
 
   // Dashboard Route
   fastify.get('/api/dashboard', {
