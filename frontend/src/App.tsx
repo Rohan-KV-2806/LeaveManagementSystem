@@ -1,15 +1,8 @@
-import { useState } from 'react'
-import './App.css'
-import { Button } from './components/ui/button'
+import { RouterProvider } from '@tanstack/react-router'
+import { router } from './router'
 
 function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <Button />
-    </>
-  )
+  return <RouterProvider router={router} />
 }
 
 export default App
