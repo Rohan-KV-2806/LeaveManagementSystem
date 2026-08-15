@@ -23,10 +23,10 @@ const seedDatabase = async () => {
     });
     console.log('Users inserted.');
 
-    // Insert Leave Types
-    await LeaveType.findOrCreate({ where: { name: 'Annual Leave' }, defaults: { description: 'Paid yearly vacation' } });
-    await LeaveType.findOrCreate({ where: { name: 'Sick Leave' }, defaults: { description: 'Medical leave' } });
-    await LeaveType.findOrCreate({ where: { name: 'Casual Leave' }, defaults: { description: 'Short personal leave' } });
+    // Insert Leave Types (upsert so re-running updates existing rows too)
+    await LeaveType.upsert({ name: 'Annual Leave', description: 'Paid yearly vacation', daysPerYear: 20 });
+    await LeaveType.upsert({ name: 'Sick Leave', description: 'Medical leave', daysPerYear: 10 });
+    await LeaveType.upsert({ name: 'Casual Leave', description: 'Short personal leave', daysPerYear: 12 });
     console.log('Leave Types inserted.');
 
     console.log('\n--- SEEDING COMPLETE ---');

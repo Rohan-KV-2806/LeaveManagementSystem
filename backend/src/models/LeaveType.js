@@ -15,6 +15,11 @@ const LeaveType = sequelize.define('LeaveType', {
   description: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  daysPerYear: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 20
   }
 }, {
   tableName: 'leave_types',

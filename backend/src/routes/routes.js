@@ -20,8 +20,22 @@ module.exports = async function (fastify, options) {
     preHandler: [fastify.authenticate]
   }, leaveController.submitLeave);
 
-  // NEW: Get all leave requests (for managers)
-  fastify.get('/api/leaves', {
+  // Current user's leave history
+  fastify.get('/api/leaves/history', {
     preHandler: [fastify.authenticate]
+  }, leaveController.getMyHistory);
+
+  // Get all leave requests (managers only)
+  fastify.get('/api/leaves', {
+    preHandler: [fastify.authenticate, fastify.requireRole('manager')]
   }, leaveController.getLeaveRequests);
+
+  // Approve / Reject leave requests (managers only)
+  fastify.patch('/api/leaves/:id/approve', {
+    preHandler: [fastify.authenticate, fastify.requireRole('manager')]
+  }, leaveController.approveLeave);
+
+  fastify.patch('/api/leaves/:id/reject', {
+    preHandler: [fastify.authenticate, fastify.requireRole('manager')]
+  }, leaveController.rejectLeave);
 };

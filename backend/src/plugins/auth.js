@@ -14,6 +14,16 @@ async function authPlugin(fastify, options) {
       reply.code(401).send({ error: 'Unauthorized: Invalid or missing token' });
     }
   });
+
+  // Decorate fastify instance with a role guard factory.
+  // Usage: preHandler: [fastify.authenticate, fastify.requireRole('manager')]
+  fastify.decorate('requireRole', (role) => {
+    return async (request, reply) => {
+      if (!request.user || request.user.role !== role) {
+        return reply.code(403).send({ error: `Forbidden: ${role} access required` });
+      }
+    };
+  });
 }
 
 module.exports = fp(authPlugin);

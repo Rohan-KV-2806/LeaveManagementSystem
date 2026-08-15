@@ -11,7 +11,7 @@ const Approval = require('./models/Approval');
 // Register CORS Plugin
 fastify.register(require('@fastify/cors'), {
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
 });
 
 // Register Auth Plugin

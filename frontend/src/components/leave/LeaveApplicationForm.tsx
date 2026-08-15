@@ -80,7 +80,7 @@ export default function LeaveApplicationForm({ onSubmitSuccess }: { onSubmitSucc
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="leaveType">Leave Type</Label>
-        <Select value={selectedType} onValueChange={setSelectedType}>
+        <Select value={selectedType} onValueChange={(value) => setSelectedType(value ?? '')}>
           <SelectTrigger id="leaveType">
             <SelectValue placeholder="Select leave type" />
           </SelectTrigger>
@@ -97,29 +97,31 @@ export default function LeaveApplicationForm({ onSubmitSuccess }: { onSubmitSucc
       <div className="space-y-2">
         <Label>Date Range</Label>
         <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              id="date"
-              variant={'outline'}
-              className={cn(
-                'w-full justify-start text-left font-normal',
-                !dateRange.from && 'text-muted-foreground'
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {dateRange.from ? (
-                dateRange.to ? (
-                  <>
-                    {format(dateRange.from, 'LLL dd, y')} - {format(dateRange.to, 'LLL dd, y')}
-                  </>
+          <PopoverTrigger
+            render={
+              <Button
+                id="date"
+                variant={'outline'}
+                className={cn(
+                  'w-full justify-start text-left font-normal',
+                  !dateRange.from && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, 'LLL dd, y')} - {format(dateRange.to, 'LLL dd, y')}
+                    </>
+                  ) : (
+                    format(dateRange.from, 'LLL dd, y')
+                  )
                 ) : (
-                  format(dateRange.from, 'LLL dd, y')
-                )
-              ) : (
-                <span>Pick a date range</span>
-              )}
-            </Button>
-          </PopoverTrigger>
+                  <span>Pick a date range</span>
+                )}
+              </Button>
+            }
+          />
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="range"
