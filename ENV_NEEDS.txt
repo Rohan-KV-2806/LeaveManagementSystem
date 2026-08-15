@@ -1,6 +1,7 @@
-PORT=3000
-DB_USER=rohan
-DB_PASS=2806
-DB_NAME=leave_management
-DB_HOST=localhost
-JWT_SECRETE_KEY=LoveIsARazorBlade
+PORT=
+DB_USER=
+DB_PASS=
+DB_NAME=
+DB_HOST=
+JWT_SECRETE_KEY=
+
