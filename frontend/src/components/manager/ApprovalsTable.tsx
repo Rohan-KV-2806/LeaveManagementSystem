@@ -11,6 +11,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 
 interface LeaveRequest {
@@ -28,6 +30,8 @@ export default function ApprovalsTable() {
   const navigate = useNavigate()
   const [requests, setRequests] = useState<LeaveRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [rejectingId, setRejectingId] = useState<number | null>(null)
+  const [rejectReason, setRejectReason] = useState('')
 
   const fetchRequests = async () => {
       const token = localStorage.getItem('token')
@@ -46,12 +50,16 @@ export default function ApprovalsTable() {
       }
     }
 
-  const handleAction = async (id: number, action: 'approve' | 'reject') => {
+  const handleAction = async (id: number, action: 'approve' | 'reject', comments?: string) => {
     const token = localStorage.getItem('token')
     try {
       const res = await fetch(`http://localhost:3000/api/leaves/${id}/${action}`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(comments ? { 'Content-Type': 'application/json' } : {})
+        },
+        body: comments ? JSON.stringify({ comments }) : undefined
       })
       const data = await res.json().catch(() => ({}))
       if (res.ok) {
@@ -68,6 +76,15 @@ export default function ApprovalsTable() {
       console.error(`Failed to ${action} request`, error)
       toast.error(`Failed to ${action} request. Check console for details.`)
     }
+  }
+
+  const confirmReject = async () => {
+    if (!rejectReason.trim()) {
+      toast.error('Please provide a reason for the rejection')
+      return
+    }
+    await handleAction(rejectingId!, 'reject', rejectReason.trim())
+    setRejectingId(null)
   }
 
   useEffect(() => {
@@ -126,7 +143,7 @@ export default function ApprovalsTable() {
                     <TableCell className="max-w-xs truncate">{req.reason}</TableCell>
                     <TableCell className="capitalize">{req.status}</TableCell>
                     <TableCell className="text-right space-x-2">
-                      <Button size="sm" variant="destructive" disabled={req.status !== 'pending'} onClick={() => handleAction(req.id, 'reject')}>
+                      <Button size="sm" variant="destructive" disabled={req.status !== 'pending'} onClick={() => { setRejectReason(''); setRejectingId(req.id) }}>
                         Reject
                       </Button>
                       <Button size="sm" disabled={req.status !== 'pending'} onClick={() => handleAction(req.id, 'approve')}>
@@ -140,6 +157,31 @@ export default function ApprovalsTable() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={rejectingId !== null} onOpenChange={(open) => { if (!open) setRejectingId(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Leave Request</DialogTitle>
+            <DialogDescription>
+              Provide a reason for rejecting this request. The employee will see it in their leave history.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Reason for rejection"
+            rows={3}
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setRejectingId(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmReject}>
+              Confirm Rejection
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
